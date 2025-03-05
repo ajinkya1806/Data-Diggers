@@ -151,7 +151,7 @@ class DocumentInfoExtractor:
             raise
 
         # Set up Gemini API
-        genai.configure(api_key="AIzaSyDxO5dlN-W99qqnRaB5nxMoIFy_YPJTdts")
+        genai.configure(api_key="YOUR_GEMINI_KEY")
 
     def convert_pdf_to_images(self, pdf_path: str, output_dir: str) -> List[str]:
         """
