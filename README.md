@@ -176,11 +176,3 @@ Extracted Document Information:
 ## Contributing
 Contributions are welcome! If you find any issues or have suggestions for improvement, please open an issue or submit a pull request.
 
----
-
-## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-This `README.md` file is now properly formatted with clear headings, subheadings, and code blocks for better readability. Let me know if you need further refinements!
