@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate for redirection
+import { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
 
-const LoginPage = ({ onLogin }) => {
-  const [username, setusername] = useState(""); // Changed to username to match backend
+const LoginPage = () => {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // For redirecting after login
+  const navigate = useNavigate();
+  const { handleLogin } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +23,7 @@ const LoginPage = ({ onLogin }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: username, // Using username to match backend field
+          username,
           password,
         }),
       });
@@ -32,18 +34,16 @@ const LoginPage = ({ onLogin }) => {
         throw new Error(data.error || "Login failed");
       }
 
-      // Store the JWT token in localStorage
-      localStorage.setItem("authToken", data.token);
-
-      // Create userData object with fullName from backend
       const userData = {
-        name: data.fullName || "User", // Use fullName from response, fallback to "User"
-        username: username,
-        profilePic: "https://randomuser.me/api/portraits/men/32.jpg", // Static for now
+        name: data.fullName || "User",
+        email: username, // Use username as email for consistency
+        profilePic: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          data.fullName || username
+        )}&background=random`,
       };
 
-      onLogin(userData); // Notify parent of successful login
-      navigate("/upload"); // Redirect to upload page after login
+      handleLogin(userData, data.token); // Use context's handleLogin instead of onLogin
+      navigate("/upload");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -109,11 +109,11 @@ const LoginPage = ({ onLogin }) => {
               <input
                 id="username"
                 name="username"
-                type="text" // Changed to text since backend expects username, not username
+                type="email"
                 autoComplete="username"
                 required
-                value={username} // Using username state for username
-                onChange={(e) => setusername(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email"
               />
@@ -148,32 +148,6 @@ const LoginPage = ({ onLogin }) => {
               {error}
             </motion.div>
           )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a
-                href="#"
-                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-              >
-                Forgot your password?
-              </a>
-            </div>
-          </div>
 
           <div>
             <motion.button

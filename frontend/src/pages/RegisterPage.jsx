@@ -1,21 +1,22 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate for redirection
+import { useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
 
-const RegisterPage = ({ onRegister }) => {
+const RegisterPage = () => {
   const [name, setName] = useState("");
-  const [username, setusername] = useState(""); // Changed to username to match backend
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // For redirecting after registration
+  const navigate = useNavigate();
+  const { handleLogin } = useContext(AuthContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Basic validation
     if (!name || !username || !password || !confirmPassword) {
       setError("All fields are required");
       return;
@@ -36,7 +37,7 @@ const RegisterPage = ({ onRegister }) => {
         },
         body: JSON.stringify({
           fullName: name,
-          username: username, 
+          username,
           password,
         }),
       });
@@ -47,14 +48,13 @@ const RegisterPage = ({ onRegister }) => {
         throw new Error(data.error || "Registration failed");
       }
 
-      // After successful signup, auto-signin to get the token
       const signinResponse = await fetch("http://localhost:5000/auth/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: username,
+          username,
           password,
         }),
       });
@@ -65,20 +65,16 @@ const RegisterPage = ({ onRegister }) => {
         throw new Error(signinData.error || "Auto-login failed");
       }
 
-      // Store the JWT token in localStorage
-      localStorage.setItem("authToken", signinData.token);
-
-      // Create userData object to pass to onRegister
       const userData = {
         name,
-        username: username, // Using as username
+        email: username,
         profilePic: `https://ui-avatars.com/api/?name=${encodeURIComponent(
           name
         )}&background=random`,
       };
 
-      onRegister(userData); // Notify parent of successful registration
-      navigate("/upload"); // Redirect to upload page after registration
+      handleLogin(userData, signinData.token); // Use context's handleLogin instead of onRegister
+      navigate("/upload");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -162,11 +158,11 @@ const RegisterPage = ({ onRegister }) => {
               <input
                 id="username"
                 name="username"
-                type="text" // Changed to text since backend expects username
+                type="email"
                 autoComplete="username"
                 required
-                value={username} // Using username as username
-                onChange={(e) => setusername(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email"
               />
