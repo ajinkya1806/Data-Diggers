@@ -27,3 +27,7 @@ def jwt_middleware():
 
     except InvalidTokenError:
         return jsonify({"error": "Invalid token"}), 401
+
+    except RuntimeError:
+        # Handle case where no JWT is provided
+        g.current_user = None

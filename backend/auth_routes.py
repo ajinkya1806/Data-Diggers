@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, g
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, get_jwt_identity
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -48,7 +48,8 @@ def signin():
     access_token = create_access_token(identity={"username": user['username']})
     return jsonify({
         "message": "Login successful",
-        "token": access_token
+        "token": access_token,
+        "fullName": user.get('fullName', 'N/A') 
     }), 200
 
 # Protected Profile Route
