@@ -11,6 +11,7 @@ def signup():
     users_collection = db['users']
 
     data = request.json
+    print("data: ", data)
 
     if not data or not data.get('username') or not data.get('password') or not data.get('fullName'):
         return jsonify({"error": "Name, Username and Password are required"}), 400
@@ -72,5 +73,7 @@ def profile():
     return jsonify({
         "message": f"Welcome {user['username']}! This is your profile.",
         "fullName": user.get('fullName', 'N/A'),
-        "username": user['username']
+        "username": user['username'],
+        "aadhar": user.get('aadhar'),
+        "pan": user.get('pan'),
     }), 200
