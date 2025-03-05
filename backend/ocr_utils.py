@@ -3,7 +3,7 @@ def extract_document_data(image_path):
     return {
         "doc_type": "aadhar",
         "identifier": "123456789012",
-        "name": "RAMESH KUMAR",
+        "name": "SUKESH KUMAR",
         "dob": "1985-06-15",
         "gender": "Male"
     }

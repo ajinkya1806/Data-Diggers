@@ -1,33 +1,23 @@
-from flask import request, jsonify, current_app, g
-from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_request
-from jwt import ExpiredSignatureError, InvalidTokenError
-import functools
+from flask import request, jsonify, g
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 # Excluded routes - No JWT check for these
-EXCLUDED_ROUTES = ['/signin', '/signup', '/']
+EXCLUDED_ROUTES = ['/auth/signin', '/auth/signup', '/']
 
 def jwt_middleware():
     """
-    Middleware to check JWT on all routes except excluded ones.
+    Middleware to set g.current_user for all routes, skipping validation for excluded routes.
+    Protected routes will handle JWT validation via @jwt_required().
     """
     if request.path in EXCLUDED_ROUTES:
-        return  # Skip token check for public routes
+        g.current_user = None  # No user for public routes
+        return
 
+    # For protected routes, @jwt_required() will handle validation
+    # If we get here, either no token is required or token is valid
     try:
-        verify_jwt_in_request(optional=True)  # Optional means only verify if token exists
-
-        # Store user info globally (in Flask's `g` object)
-        g.current_user = get_jwt_identity()
-
-        if not g.current_user:
-            return jsonify({"error": "Invalid token"}), 401
-
-    except ExpiredSignatureError:
-        return jsonify({"error": "Token has expired"}), 401
-
-    except InvalidTokenError:
-        return jsonify({"error": "Invalid token"}), 401
-
-    except RuntimeError:
-        # Handle case where no JWT is provided
-        g.current_user = None
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        g.current_user = {"username": identity} if identity else None
+    except Exception as e:
+        g.current_user = None  # Fallback if token verification fails unexpectedly
