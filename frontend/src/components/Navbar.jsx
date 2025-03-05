@@ -1,11 +1,59 @@
-"use client";
-
-import { useState } from "react";
+// src/components/Navbar.jsx
+import { useState, useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { AuthContext } from "../context/AuthContext";
 
-const Navbar = ({ user, isLoggedIn, onLogout }) => {
+const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { authState, user, handleLogout } = useContext(AuthContext);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    authState === "authenticated"
+  );
+  const [localUser, setLocalUser] = useState(user);
+
+  // Check localStorage on mount and update state
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const storedUser = localStorage.getItem("user");
+
+    if (token && storedUser) {
+      // If token and user exist in localStorage, use them as fallback
+      setIsAuthenticated(true);
+      setLocalUser(JSON.parse(storedUser));
+    } else {
+      setIsAuthenticated(authState === "authenticated");
+      setLocalUser(user);
+    }
+  }, [authState, user]);
+
+  // If still loading, show a minimal placeholder to avoid flickering
+  if (authState === "loading") {
+    return (
+      <nav className="bg-white shadow-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <Link
+                    to="/"
+                    className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text"
+                  >
+                    OCR<span className="font-extrabold">Extract</span>
+                  </Link>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -33,7 +81,7 @@ const Navbar = ({ user, isLoggedIn, onLogout }) => {
               >
                 Home
               </Link>
-              {isLoggedIn && (
+              {isAuthenticated && (
                 <Link
                   to="/upload"
                   className="border-transparent text-gray-600 hover:border-indigo-500 hover:text-indigo-700 inline-flex items-center px-1 pt-1 border-b-2 text-base font-medium transition-colors duration-200"
@@ -44,30 +92,34 @@ const Navbar = ({ user, isLoggedIn, onLogout }) => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {isLoggedIn ? (
+            {isAuthenticated && localUser ? (
               <div className="flex items-center space-x-4">
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1 rounded-full"
-                >
-                  <div className="relative">
-                    <img
-                      className="h-8 w-8 rounded-full object-cover border-2 border-indigo-500"
-                      src={
-                        user.profilePic ||
-                        "https://ui-avatars.com/api/?name=" + user.name
-                      }
-                      alt={user.name}
-                    />
-                    <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-green-400 ring-2 ring-white"></span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.name}
-                  </span>
-                </motion.div>
+                <Link to="/profile">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center space-x-2 bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1 rounded-full cursor-pointer"
+                  >
+                    <div className="relative">
+                      <img
+                        className="h-8 w-8 rounded-full object-cover border-2 border-indigo-500"
+                        src={
+                          localUser.profilePic ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            localUser.name
+                          )}`
+                        }
+                        alt={localUser.name}
+                      />
+                      <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-green-400 ring-2 ring-white"></span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {localUser.name}
+                    </span>
+                  </motion.div>
+                </Link>
                 <button
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Logout
@@ -134,7 +186,6 @@ const Navbar = ({ user, isLoggedIn, onLogout }) => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       {isMenuOpen && (
         <div className="sm:hidden">
           <div className="pt-2 pb-3 space-y-1">
@@ -144,38 +195,50 @@ const Navbar = ({ user, isLoggedIn, onLogout }) => {
             >
               Home
             </Link>
-            {isLoggedIn && (
-              <Link
-                to="/upload"
-                className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-              >
-                Upload
-              </Link>
+            {isAuthenticated && (
+              <>
+                <Link
+                  to="/upload"
+                  className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+                >
+                  Upload
+                </Link>
+                <Link
+                  to="/profile"
+                  className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+                >
+                  Profile
+                </Link>
+              </>
             )}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
-            {isLoggedIn ? (
+            {isAuthenticated && localUser ? (
               <div className="flex items-center px-4">
-                <div className="flex-shrink-0">
-                  <img
-                    className="h-10 w-10 rounded-full"
-                    src={
-                      user.profilePic ||
-                      "https://ui-avatars.com/api/?name=" + user.name
-                    }
-                    alt={user.name}
-                  />
-                </div>
-                <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">
-                    {user.name}
+                <Link to="/profile" className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <img
+                      className="h-10 w-10 rounded-full"
+                      src={
+                        localUser.profilePic ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          localUser.name
+                        )}`
+                      }
+                      alt={localUser.name}
+                    />
                   </div>
-                  <div className="text-sm font-medium text-gray-500">
-                    {user.username}
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">
+                      {localUser.name}
+                    </div>
+                    <div className="text-sm font-medium text-gray-500">
+                      {localUser.email}
+                    </div>
                   </div>
-                </div>
+                </Link>
                 <button
-                  onClick={onLogout}
+                  onClick={handleLogout}
                   className="ml-auto flex-shrink-0 bg-indigo-600 p-1 rounded-full text-white hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   <span className="sr-only">Logout</span>
