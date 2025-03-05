@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, g
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
@@ -53,13 +53,15 @@ def signin():
 
 # Protected Profile Route
 @auth_bp.route('/profile', methods=['GET'])
-@jwt_required()
 def profile():
     db = current_app.config['DATABASE']
     users_collection = db['users']
 
-    current_user = get_jwt_identity() 
-    username = current_user['username']
+    # Access current user from global context
+    if not hasattr(g, 'current_user') or not g.current_user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    username = g.current_user['username']
 
     user = users_collection.find_one({"username": username}, {"_id": 0})
 
@@ -67,7 +69,7 @@ def profile():
         return jsonify({"error": "User not found"}), 404
 
     return jsonify({
+        "message": f"Welcome {user['username']}! This is your profile.",
         "fullName": user.get('fullName', 'N/A'),
         "username": user['username']
     }), 200
-
