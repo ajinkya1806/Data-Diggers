@@ -3,3 +3,4 @@ pymongo
 python-dotenv
 werkzeug
 flask-jwt-extended
+flask-cors
